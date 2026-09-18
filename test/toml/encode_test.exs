@@ -45,6 +45,42 @@ defmodule TomlElixir.EncodeTest do
     end
   end
 
+  describe "U+FEFF in strings" do
+    test "encode/decode roundtrips a lone FEFF value" do
+      data = %{"a" => "\uFEFF"}
+      assert {:ok, toml} = TomlElixir.encode(data)
+      assert {:ok, decoded} = TomlElixir.decode(toml)
+      assert decoded == data
+    end
+
+    test "encode/decode roundtrips FEFF mid-string" do
+      data = %{"a" => "x\uFEFFy"}
+      assert {:ok, toml} = TomlElixir.encode(data)
+      assert {:ok, decoded} = TomlElixir.decode(toml)
+      assert decoded == data
+    end
+
+    test "decodes explicit \\uFEFF escape" do
+      assert {:ok, %{"a" => "\uFEFF"}} = TomlElixir.decode(~S[a = "\uFEFF"])
+    end
+
+    test "accepts leading document BOM" do
+      assert {:ok, %{"a" => 1}} = TomlElixir.decode("\uFEFFa = 1")
+    end
+
+    test "decodes literal U+FEFF bytes inside a string value" do
+      assert {:ok, %{"a" => "\uFEFF"}} = TomlElixir.decode("a = \"\uFEFF\"\n")
+    end
+
+    test "decodes literal U+FEFF mid-string" do
+      assert {:ok, %{"a" => "x\uFEFFy"}} = TomlElixir.decode("a = \"x\uFEFFy\"\n")
+    end
+
+    test "double BOM is rejected" do
+      assert {:error, _} = TomlElixir.decode("\uFEFF\uFEFFa = 1")
+    end
+  end
+
   defp contains_nan?(map) when is_map(map) do
     if Map.has_key?(map, :__struct__) do
       false

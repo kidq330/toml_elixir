@@ -105,6 +105,7 @@ defmodule TomlElixir.Encoder.Helpers do
   defp escape_char(?\n), do: "\\n"
   defp escape_char(?\r), do: "\\r"
   defp escape_char(?\t), do: "\\t"
+  defp escape_char(0xFEFF), do: "\\uFEFF"
 
   defp escape_char(c) when c < 0x20 or c == 0x7F do
     "\\u" <> (c |> Integer.to_string(16) |> String.pad_leading(4, "0"))
